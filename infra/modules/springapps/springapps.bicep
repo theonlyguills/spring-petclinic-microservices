@@ -11,6 +11,7 @@ param adminRelativePath string
 param customersRelativePath string
 param vetsRelativePath string
 param visitsRelativePath string
+param insightKey string
 
 resource asaInstance 'Microsoft.AppPlatform/Spring@2022-12-01' = {
   name: asaInstanceName
@@ -19,6 +20,15 @@ resource asaInstance 'Microsoft.AppPlatform/Spring@2022-12-01' = {
   sku: {
       name: 'S0'
       tier: 'Standard'
+  }
+}
+
+resource monitorSetting 'Microsoft.AppPlatform/Spring/monitoringSettings@2023-03-01-preview' = {
+  parent: asaInstance
+  name: 'default'
+  properties: {
+    appInsightsInstrumentationKey: insightKey
+    appInsightsSamplingRate: 10
   }
 }
 

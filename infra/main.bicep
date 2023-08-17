@@ -24,6 +24,11 @@ param vetsRelativePath string
 @description('Relative Path of ASA visits service app Jar')
 param visitsRelativePath string
 
+param applicationInsightsDashboardName string = ''
+param applicationInsightsName string = ''
+
+param logAnalyticsName string = ''
+
 var abbrs = loadJsonContent('./abbreviations.json')
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
 var asaInstanceName = '${abbrs.springApps}${resourceToken}'
@@ -44,6 +49,19 @@ resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
   tags: tags
 }
 
+// Monitor application with Azure Monitor
+module monitoring './modules/core/monitor/monitoring.bicep' = {
+  name: 'monitoring'
+  scope: rg
+  params: {
+    location: location
+    tags: tags
+    logAnalyticsName: !empty(logAnalyticsName) ? logAnalyticsName : '${abbrs.operationalInsightsWorkspaces}${resourceToken}'
+    applicationInsightsName: !empty(applicationInsightsName) ? applicationInsightsName : '${abbrs.insightsComponents}${resourceToken}'
+    applicationInsightsDashboardName: !empty(applicationInsightsDashboardName) ? applicationInsightsDashboardName : '${abbrs.portalDashboards}${resourceToken}'
+  }
+}
+
 module springApps 'modules/springapps/springapps.bicep' = {
   name: '${deployment().name}--asa'
   scope: resourceGroup(rg.name)
@@ -61,6 +79,7 @@ module springApps 'modules/springapps/springapps.bicep' = {
 	customersRelativePath: customersRelativePath
 	vetsRelativePath: vetsRelativePath
 	visitsRelativePath: visitsRelativePath
+	insightKey: monitoring.outputs.applicationInsightsInstrumentationKey
   }
 }
 
